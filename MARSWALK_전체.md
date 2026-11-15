@@ -31,8 +31,10 @@
 | **방사선** | Curiosity RAD (Hassler 2014) + 지형차폐 (Guo 2026) | ✅ NASA PDS raw | 0.64 mSv/day · 차폐 ~20% | 화성 표면 직접측정 |
 | **지형 경사** | Jezero CTX DEM 20m (USGS) | ✅ 격자화 (`build_grid.py`) | 0.5 / 3.1 / 22.7° (5km 클립) | Jezero 지형 부합 |
 | **교신 음영** | 같은 CTX DEM (가시선) | ✅ 격자화 (안테나 15m) | clear 2,483 / shadow 584칸 | 근거리 비이슈 |
-| **생명점수 S1** | CRISM 광물맵 (Zenodo 5575824) | ✅ 격자화 (범례 룩업·footprint 최빈) | S1 0~4, 2,488칸(81.1%) | iMOST 보존광물 |
-| **생명점수 S2** | USGS 지질맵 SIM3464 (Sun & Stack 2020) | ✅ 래스터화 (`make_s2.py`)+격자화 | S2 0~4, 3,067칸(100%) | Broz 2020 세립퇴적 보존 |
+| **생명점수 S1** | CRISM 함수광물(점토·탄산염) | ✅ 격자화 | S1 0~4, 커버리지 81% | 점토·탄산염=생명 유력 지표 |
+| **생명점수 S2** | USGS SIM3464 지질(퇴적·델타) | ✅ 격자화 | S2 0~4, 델타 전선 최고점(84) | Jezero 바닥=화성암→S2=1 (Perseverance 지상검증) |
+| **암석도** | THEMIS 열관성 (Zenodo 4931348, Edwards&Buz 2021) | ✅ 격자화 | rock 0~1, 바닥 0~0.32 | 저열관성=모래 |
+| **경로탐색** | A*(경사·암석 비용) | ✅ 검증 | 델타 전선 22.7°→11.2° | 급경사 회피 확인 |
 | **POV 실사** | Mars2020 raw image API | ✅ 받음 (`fetch_pov.py`) | 델타 sol 400대 | Perseverance 실촬영 |
 | **지도 타일** | OpenPlanetary / Mars Trek | ✅ | MOLA·THEMIS·HiRISE·CRISM | — |
 | **우주기상** | NASA DONKI API | ✅ 받음 | SPE/CME 이벤트 | — |
@@ -51,9 +53,10 @@
 
 - **입력:** Jezero CTX DEM 20m/px (USGS, 90MB) + CRISM 광물맵(Zenodo 5575824) + USGS 지질맵 SIM3464.
 - **스크립트:** `make_s2.py`(지질 폴리곤→S2 래스터) → `build_grid.py`(DEM 경사·교신 + S1 + S2 → 격자).
-- **산출:** `grid.js` — **3,067칸**(칸≈160m, 기지 5km 클립). `window.GRID` 전역.
+- **산출:** `make_s2.py` → `data/s2_jezero.tif` → `grid.js` — **3,067칸**(칸≈160m, 기지 5km 클립). `window.GRID` 전역.
 - **결과:** 경사 0.5/3.1/22.7° · 교신 clear 2,483/shadow 584 · **S1 2,488칸(81.1%) · S2 3,067칸(100%) · score 3,067칸(100%, 25/42.7/100)**.
-- **의미:** 경사·교신·**생명점수(S1·S2)** 전부 실데이터. S4 물활동·S3 염류는 설계완료·비적용 → 남은 건 S5(로버 근접) 투입뿐.
+- **의미:** **S1(CRISM)·S2(SIM3464)·암석도(THEMIS)·A\* 전부 채움·검증 완료.** 경사·교신·생명점수 전부 실데이터. S4 물활동·S3 염류는 설계완료·비적용 → 남은 건 S5(로버 근접) 투입뿐.
+- **메모:** Jezero 바닥은 Perseverance 지상검증 결과 화성암(Máaz/Séítah)이라 S2 2→1 하향, 델타 팬만 고점.
 - **생성:** `python build_grid.py --dem jezero_dem.tif --crism zenodo_5575824/jezeroFinal.tif --geo data/s2_jezero.tif --geo-scored --out grid.js --clip-km 5 --cell-px 8 --antenna-h 15`
 
 ## D. 데이터가 아닌 것 — 공식·기하·설계 ⬜
@@ -77,7 +80,7 @@
 
 # MARSWALK — 추후 할 일 (TODO)
 
-> 2026-11-14 기준. 지금 핸드오프 키트로 발표는 방어 가능. 아래는 "더 조이거나 실제 개발" 단계.
+> 2026-11-15 기준. 지금 핸드오프 키트로 발표는 방어 가능. 아래는 "더 조이거나 실제 개발" 단계.
 
 ## 🔴 필수 (개발 전환 시)
 1. **앱 실제 구현** — React + Leaflet + Recharts + Zustand.
@@ -88,7 +91,7 @@
    - 연동 예시: `8_grid_guide.md` §5.
 
 ## 🟡 데이터 더 조이기 (선택, 신뢰도↑)
-3. **생명점수 칸 Sᵢ 채우기 — S1·S2 완료 ✅.** CRISM 광물맵(Zenodo 5575824)→S1, USGS SIM3464→S2 실데이터로 반영.
+3. **생명점수 칸 Sᵢ 채우기 — S1(CRISM)·S2(SIM3464)·암석도(THEMIS)·A\* 전부 채움·검증 완료.**
    `python build_grid.py --dem jezero_dem.tif --crism zenodo_5575824/jezeroFinal.tif --geo data/s2_jezero.tif --geo-scored --out grid.js --clip-km 5 --cell-px 8 --antenna-h 15`
    - S1 루브릭 = **범례 RGB 최근접 분류 → 칸 footprint 최빈 광물**(퍼센타일 아님). S2 = 지질유닛별 점수 footprint 평균.
    - **S4(물 활동)·S3(염류) = 설계완료·비적용** (S4는 S1·S2에 반영, S3은 Jezero 희박). **남은 것: S5(로버 근접) 투입** → score 자동 재혼합.
