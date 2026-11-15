@@ -1,4 +1,4 @@
-# MARSWALK 모델 근거·출처 (2026-11-14)
+# MARSWALK 모델 근거·출처 (2026-11-15)
 
 > 생체·대사·방사선·지형 모델에 쓴 **모든 값의 출처.** 발표 Q&A("그 숫자 어디서?") 방어용.
 > 값은 3종류로 분류: **🟩 실측 · 🟦 논문 공식/값 · 🟨 근거 있는 추정(교체 가능)**
@@ -103,8 +103,12 @@ Pandolf 식의 L = 체중 외에 **몸 밖으로 지고/메고 다니는 하중*
 - Allton JH (1989) "Catalog of Apollo Lunar Surface Geological Sampling Tools and Containers." NASA JSC-23454 (LESC-26676), Lyndon B. Johnson Space Center — https://www.lpi.usra.edu/captem/lsac/alltonLunarToolCatalog.pdf (HTC 13.4 kg · ALSRC 6.7 kg · 임무별 공구총질량 22.9~53.0 kg)
 - NASA Apollo Lunar Surface Journal — Portable Life Support System (PLSS ~47 kg 제어부 포함 / ~38 kg 본체) — https://www.nasa.gov/wp-content/uploads/static/history/alsj/
 
+**생명점수 데이터셋 (S1 CRISM · S2 지질)**
+- S1 CRISM 광물맵 — Parente M, Saranathan AM, Itoh Y, Tarnas JD, Seelos FP, Mustard JF, "Map of the dominant mineralogy over and around the Mars2020 landing ellipse with correspondent spectral signatures", Zenodo 5575824 — https://doi.org/10.5281/zenodo.5575824 · **라이선스 CC-BY-4.0** (방법 논문: Itoh & Parente 2021 · Saranathan & Parente 2021)
+- S2 지질맵 — Sun VZ & Stack KM (2020) "Geologic map of Jezero crater and the Nili Planum region, Mars", USGS SIM 3464 — https://doi.org/10.3133/sim3464 · **라이선스: 미국 정부 저작물 → 퍼블릭 도메인**(출처 표기 권장)
+
 **암석 피복 / 열관성 (rock layer — 안전·A* 우회)**
-- Edwards CS & Buz J (2021) "THEMIS-derived Thermal Inertia of Jezero Crater, Mars." Zenodo 4931348 — https://doi.org/10.5281/zenodo.4931348 (단위 J·m⁻²·K⁻¹·s⁻¹ᐟ², null=0)
+- Edwards CS & Buz J (2021) "THEMIS-derived Thermal Inertia of Jezero Crater, Mars." Zenodo 4931348 — https://doi.org/10.5281/zenodo.4931348 · **라이선스 CC-BY-4.0** (단위 J·m⁻²·K⁻¹·s⁻¹ᐟ², null=0)
 - 기준값: ~150 느슨한 모래 / 350 굳은(indurated) 퇴적암 / >1200 결정질 화성암 → rock(0~1) 2구간 선형 매핑(150→350=0→0.5, 350→1200=0.5→1.0)
 - 해석 근거: Mellon et al. 2000(TPS 열관성) · Fergason et al. 2006(THEMIS TI) · Edwards & Buz 2021(Jezero TI 맵)
 
@@ -121,5 +125,32 @@ Pandolf 식의 L = 체중 외에 **몸 밖으로 지고/메고 다니는 하중*
 - **보정 결과:** `HR = 70.5 + 113.2·%VO2`  (R²=0.77)
 - **검증:** 기존 데모값(70 + 116·%VO2)이 실측과 거의 일치 → **심박 모델이 실측으로 검증됨**
 - HRmax(220−나이=186)로 캡, %VO2>1은 "지속 불가" 플래그
-- 출처: Mongin, García Romero, Alvero Cruz (2021) PhysioNet, DOI 10.13026/7ezk-j442 — physionet.org/content/treadmill-exercise-cardioresp/
+- 데이터셋: Mongin D, García Romero J, Alvero Cruz JR (2021) "Treadmill maximal exercise tests from the Exercise Physiology and Human Performance Lab of the University of Malaga" (v1.0.1), PhysioNet, DOI 10.13026/7ezk-j442 — physionet.org/content/treadmill-exercise-cardioresp/
+  - **라이선스: PhysioNet Contributor Review Health Data License 1.5.0** (재배포 시 라이선스 표기 필수)
+  - 원 논문: Mongin et al. (2021) *Research in Sports Medicine*, DOI 10.1080/15438627.2021.1954513
+  - **표준 플랫폼 인용:** Pollard TJ, et al. (2026) "PhysioNet as a global platform for biomedical research." *Nature Health*.
 - 산출물: `data/synthetic_eva.json` (실측 보정 기반 EVA 시계열), `scripts/calibrate_hr.py`
+
+---
+
+## 10. 데이터셋 라이선스 & 저작자 표기 (재배포·발표 시 준수)
+
+> 각 외부 데이터 출처별 라이선스와 attribution. Zenodo 레코드 `License` 필드 실확인(둘 다 **CC-BY-4.0**), PhysioNet은 데이터셋 페이지 라이선스.
+
+| 데이터셋 | 라이선스 | 저작자 표기(attribution) |
+|---|---|---|
+| **CRISM 광물맵** (Zenodo 5575824) | **CC-BY-4.0** | Parente, Saranathan, Itoh, Tarnas, Seelos, Mustard (2021) |
+| **THEMIS 열관성** (Zenodo 4931348) | **CC-BY-4.0** | Edwards & Buz (2021) |
+| **USGS SIM3464 지질맵** | 미국 정부 저작물 → **퍼블릭 도메인** | Sun & Stack (2020), USGS (출처 표기 권장) |
+| **Jezero DEM / Mars Trek 타일** | NASA·USGS → **퍼블릭 도메인** | NASA/JPL-Caltech · USGS Astrogeology |
+| **MSL RAD 선량** (PDS) | NASA → **퍼블릭 도메인** | NASA/JPL · Hassler et al. (2014) |
+| **DONKI 우주기상** | NASA Open Data → **퍼블릭 도메인** | NASA/CCMC |
+| **Perseverance raw 이미지** | NASA → **퍼블릭 도메인** | NASA/JPL-Caltech/ASU |
+| **OpenPlanetary 베이스맵** | 공개 타일 서비스(기저 데이터 NASA/USGS 퍼블릭 도메인) | OpenPlanetary · NASA/USGS |
+| **PhysioNet 트레드밀 심박** | **PhysioNet Contributor Review Health Data License 1.5.0** | Mongin, García Romero, Alvero Cruz (2021) |
+
+**준수 요약**
+- **CC-BY-4.0**(CRISM·THEMIS): 재사용 시 저작자·출처·라이선스 링크(https://creativecommons.org/licenses/by/4.0/) 표기 + 변경 여부 명시.
+- **NASA/USGS 퍼블릭 도메인**: 저작권 제한 없음. 관례상 "courtesy NASA/JPL-Caltech"·"USGS" 출처 표기.
+- **PhysioNet (Contributor Review Health Data License 1.5.0)**: 데이터셋 재배포 시 라이선스 전문·DOI 동반. 표준 인용은 **Pollard et al. (2026, *Nature Health*)** + 데이터셋 저자(Mongin et al. 2021).
+- 본 repo의 격자 산출물(`grid.geojson`·`grid.js`·`data/s2_jezero.tif`)은 위 소스를 가공한 2차물 — 배포 시 원 소스 라이선스(특히 CC-BY attribution) 승계.
