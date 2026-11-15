@@ -1,0 +1,16 @@
+{
+  "_desc": "생명점수 가중치 (SSTM 0~4 척도 · 가중합)",
+  "_source": "iMOST · MSR SSTM · Sephton · Conrad&Eigenbrode",
+  "conditions": [
+    {"key":"S1","name":"수성광물","weight":0.30,"data":"CRISM 함수광물","source":"Sephton 유기물 1순위"},
+    {"key":"S2","name":"퇴적·델타","weight":0.25,"data":"지질 SIM3464","source":"유기물 보존 매질"},
+    {"key":"S4","name":"물 흔적","weight":0.20,"data":"수로·델타","source":"수성 맥락"},
+    {"key":"S5","name":"로봇 발견","weight":0.15,"data":"Perseverance 노두","source":"검증 보너스"},
+    {"key":"S3","name":"염류","weight":0.10,"data":"Chloride THEMIS","source":"약한 바이오시그널"}
+  ],
+  "presets": {
+    "기본_과학권장": [0.30,0.25,0.20,0.15,0.10],
+    "물추적": [0.40,0.20,0.25,0.10,0.05],
+    "검증우선": [0.20,0.15,0.15,0.40,0.10]
+  }
+}

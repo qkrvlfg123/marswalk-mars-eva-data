@@ -1,0 +1,25 @@
+# MARSWALK — 대용량 원본 제외 (재취득은 docs/6_raw_downloads.md 링크)
+# GitHub 100MB 파일 제한 초과분 포함. 격자 산출물(grid.*)과 S2 래스터는 '포함'.
+
+# DEM 원본 (~86MB)
+jezero_dem.tif
+
+# Zenodo 원본 폴더 (CRISM 광물맵, THEMIS 열관성)
+zenodo_*/
+
+# PhysioNet 원본 (심박 트레드밀)
+physionet_data/
+physionet_data.zip
+
+# USGS SIM3464 지질맵 원본 (zip ~333MB, 추출 래스터 다수 >100MB)
+sim3464_database.zip
+sim3464_extract/
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# ── 아래는 '포함'(참고용 명시, 무시 안 함) ──
+# !data/s2_jezero.tif
+# !grid.geojson
+# !grid.js

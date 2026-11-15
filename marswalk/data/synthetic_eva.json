@@ -1,0 +1,60 @@
+{
+  "_source": "PhysioNet treadmill (992 tests, 57만 샘플) 실측 보정",
+  "_model": "HR = 70.5 + 113.2*pctVO2 (R2=0.77), HRmax cap 186",
+  "scenario": [
+    {
+      "t_min": 0,
+      "slope_deg": 5,
+      "load_kg": 20,
+      "pctVO2": 0.64,
+      "HR_bpm": 143,
+      "O2_Lmin": 1.91,
+      "sustainable": true
+    },
+    {
+      "t_min": 10,
+      "slope_deg": 12,
+      "load_kg": 20,
+      "pctVO2": 0.96,
+      "HR_bpm": 179,
+      "O2_Lmin": 2.87,
+      "sustainable": true
+    },
+    {
+      "t_min": 20,
+      "slope_deg": 15,
+      "load_kg": 25,
+      "pctVO2": 1.15,
+      "HR_bpm": 186,
+      "O2_Lmin": 3.46,
+      "sustainable": false
+    },
+    {
+      "t_min": 30,
+      "slope_deg": 5,
+      "load_kg": 25,
+      "pctVO2": 0.67,
+      "HR_bpm": 146,
+      "O2_Lmin": 2.01,
+      "sustainable": true
+    },
+    {
+      "t_min": 40,
+      "slope_deg": 8,
+      "load_kg": 20,
+      "pctVO2": 0.77,
+      "HR_bpm": 158,
+      "O2_Lmin": 2.32,
+      "sustainable": true
+    },
+    {
+      "t_min": 50,
+      "slope_deg": 2,
+      "load_kg": 15,
+      "pctVO2": 0.48,
+      "HR_bpm": 125,
+      "O2_Lmin": 1.44,
+      "sustainable": true
+    }
+  ]
+}

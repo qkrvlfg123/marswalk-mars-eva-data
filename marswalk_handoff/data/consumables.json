@@ -1,0 +1,20 @@
+{
+  "_desc": "EVA 소모품 — 복귀 한계 = 제일 먼저 바닥나는 것. 아폴로 PLSS 실측 수치.",
+  "_source": "아폴로 15-17 PLSS(8h) 실제 용량 + EMU 지속시간-작업률 곡선",
+  "nominal_duration_min": 480,
+  "nominal_metabolic_BTU_hr": 930,
+  "duration_vs_workload": [
+    {"BTU_hr": 930, "hours": 8},
+    {"BTU_hr": 1200, "hours": 6},
+    {"BTU_hr": 1600, "hours": 5}
+  ],
+  "duration_source": "Apollo/AEMU EMU duration · NTRS 20150009506",
+  "consumables": [
+    {"key":"o2","name":"산소",        "capacity":"1430 psi",        "scales_with_metabolic":true,  "source":"아폴로 15-17 PLSS"},
+    {"key":"fw","name":"냉각수",      "capacity":"5.2 L (11.5 lb)", "scales_with_metabolic":true,  "source":"아폴로 15-17 PLSS"},
+    {"key":"co","name":"CO2 (LiOH)",  "capacity":"3.12 lb",         "scales_with_metabolic":true,  "source":"아폴로 15-17 PLSS"},
+    {"key":"ba","name":"배터리",      "capacity":"390 Wh",          "scales_with_metabolic":false, "source":"아폴로 15-17 PLSS"}
+  ],
+  "telemetry_note": "소모품별 잔여시간 차이는 실측됨 — 아폴로12 텔레메트리: O2 2.2h·냉각수 2.4h·CO2 2.1h·전력 0.72h (NTRS 19720019460)",
+  "_note": "용량은 실측, 분당 소모율은 대사율 비례(duration_vs_workload)로 계산"
+}

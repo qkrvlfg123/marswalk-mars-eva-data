@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MARSWALK — 실데이터 격자 데모</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- 실제 Jezero 지형 격자. build_grid.py 로 생성:
+     python build_grid.py --dem jezero_dem.tif --out grid.js --clip-km 5 --cell-px 8
+     이 html 과 같은 폴더에 grid.js 두면 자동 로딩(없어도 데모는 돌아감). -->
+<script src="grid.js" onerror="window.GRID=null;console.error('[MARSWALK] grid.js 로드 실패 — 같은 폴더에 grid.js가 있는지, build_grid.py로 생성됐는지 확인하세요. 경사는 수동 슬라이더로 대체됩니다.')"></script>
+<style>
+  html,body{height:100%;margin:0;font-family:sans-serif;background:#111}
+  #map{position:absolute;inset:0;background:#2a2a2a}
+  #panel{position:absolute;top:10px;right:10px;z-index:1000;width:250px;
+         background:rgba(16,16,24,.94);color:#eee;padding:13px 15px;border-radius:11px;font-size:13px}
+  #status{text-align:center;font-size:18px;font-weight:800;padding:7px;border-radius:7px;margin-bottom:10px;background:#152}
+  .stat{display:flex;justify-content:space-between;font-size:13px;margin:4px 0}
+  .bar{height:14px;border-radius:4px;background:#222;overflow:hidden;margin:2px 0 9px}
+  .fill{height:100%;width:100%}
+  #panel label{display:block;margin:8px 0 1px;color:#9a9}
+  button{background:#2b6;border:0;color:#042;font-weight:700;padding:7px 13px;border-radius:6px;cursor:pointer;margin:9px 4px 0 0}
+  .pop b{font-size:14px} .pop img{width:200px;border-radius:6px;display:block;margin:5px 0}
+  #gridnote{position:absolute;left:10px;bottom:10px;z-index:1000;background:rgba(16,16,24,.9);color:#cde;
+            padding:8px 11px;border-radius:8px;font-size:11px;max-width:260px}
+</style></head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <div id="status">목적지를 골라요</div>
+  <div class="stat">🫙 산소 <span id="o2p">100</span>%</div><div class="bar"><div class="fill" id="o2bar" style="background:#4af"></div></div>
+  <div class="stat">💪 체력 <span id="stam">100</span>%</div><div class="bar"><div class="fill" id="stambar" style="background:#6c6"></div></div>
+  <div class="stat">☢️ 피폭 <span id="dose">0.00</span> mSv</div><div class="bar"><div class="fill" id="dosebar" style="width:0%;background:#fa3"></div></div>
+  <div class="stat">❤️ 심박 <span id="hr">70</span> bpm · 🎯 <span id="dname">–</span></div>
+  <div class="stat">⛰ 발밑 경사 <span id="gslope">–</span>° <span id="gsrc" style="color:#8ac"></span></div>
+  <div class="stat">📡 교신 <span id="gcomm">–</span></div>
+  <label>경사(수동, grid 없을 때만): <span id="slopeV">8</span>°</label><input type="range" id="slope" min="0" max="25" value="8">
+  <label>적재 무게: <span id="loadV">20</span> kg</label><input type="range" id="load" min="0" max="50" value="20">
+  <button id="go">▶ EVA 시작</button><button id="reset">⟳ 리셋</button>
+</div>
+<div id="gridnote">격자: 색 = 실제 Jezero 경사(초록 평지→빨강 급경사) · <b style="color:#b0712c">갈색 = 암석 피복</b>(THEMIS 열관성) · 보라 = 교신 음영 · <b style="color:#0ff">청록 점선 = A* 최소비용 경로</b>(경사>25° 통행불가 + 바위밭 회피). 우측 상단 레이어 토글.<br><span id="gridstat"></span></div>
+
+<script>
+  const BASE=[18.44,77.45];   // Perseverance 착륙지 (EVA 기준점)
+  const map=L.map('map').setView(BASE,14);
+  L.tileLayer('https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-2/all/{z}/{x}/{y}.png',
+    {attribution:'OpenPlanetary · NASA',maxZoom:14}).addTo(map);
+
+  // ── 실데이터 격자 (grid.js = window.GRID) ──
+  let cells=[];                      // {lat,lon,slope,comm} 발밑 경사 조회용
+  // 평지=진한 초록 → 급경사=밝은 빨강 (대비 강화)
+  function slopeColor(s){ return s>25?'#ff1111':s>15?'#ff5a00':s>8?'#ffd400':s>3?'#3fa019':'#0a5a1e'; }
+  if (window.GRID && window.GRID.features){
+    const F=window.GRID.features;
+    // 경사 히트맵
+    const slopeLayer=L.geoJSON(window.GRID,{style:f=>({
+      fillColor:slopeColor(f.properties.slope_deg), fillOpacity:.85,
+      color: f.properties.slope_deg>25?'#f55':'#0000', weight:f.properties.slope_deg>25?1.5:0
+    })}).addTo(map);
+    // 교신 음영
+    const shadowLayer=L.geoJSON({type:'FeatureCollection',features:F.filter(f=>f.properties.comm==='shadow')},
+      {style:()=>({fillColor:'#93f',fillOpacity:.35,weight:0})});
+    // 암석 피복(THEMIS 열관성 → rock 0~1): 모래=투명 → 바위=진한 갈색
+    const rockColor=v=>(v==null||v<0.1)?'#0000':v>=0.6?'#5a2d0c':v>=0.4?'#8a4b1a':v>=0.25?'#b0712c':'#d2a877';
+    const rockLayer=L.geoJSON(window.GRID,{style:f=>({fillColor:rockColor(f.properties.rock),
+      fillOpacity:(f.properties.rock!=null&&f.properties.rock>=0.1)?.6:0,weight:0})});
+    L.control.layers(null,{'경사(실데이터)':slopeLayer,'암석(열관성)':rockLayer,'교신 음영':shadowLayer},{collapsed:false}).addTo(map);
+    // 발밑 경사 조회용 센트로이드
+    F.forEach(f=>{const c=f.geometry.coordinates[0]; let x=0,y=0; for(let i=0;i<4;i++){x+=c[i][0];y+=c[i][1];}
+      cells.push({lon:x/4,lat:y/4,slope:f.properties.slope_deg,comm:f.properties.comm,score:f.properties.score,rock:f.properties.rock});});
+    document.getElementById('gridstat').textContent=`칸 ${F.length}개 로드됨 · 발밑 경사 자동 반영`;
+  } else {
+    console.error('[MARSWALK] window.GRID 비어있음 — grid.js가 로드되지 않았거나 features가 없습니다. 경사는 수동 슬라이더로 대체됩니다.');
+    document.getElementById('gridstat').textContent='grid.js 없음 → 경사는 수동 슬라이더. (build_grid.py 로 생성해 옆에 두면 실데이터)';
+  }
+  function cellAt(lat,lon){   // 가장 가까운 칸
+    if(!cells.length) return null;
+    let best=null,bd=1e9;
+    for(const c of cells){const d=(c.lat-lat)**2+(c.lon-lon)**2; if(d<bd){bd=d;best=c;}}
+    return best;
+  }
+
+  // ── 격자 기반 경로탐색 (A*) ──
+  const SLOPE_BLOCK=25;   // 이 경사(도) 초과 칸 = 통행불가(막음)
+  const ROCK_PENALTY=2.0; // A* 간선비용 암석 가중: rock=1이면 ×3(바위밭 우회), rock=0이면 ×1
+  const MARS_R=3396190;                      // 화성 반지름(m) USGS 3396.19km — 격자 생성(build_grid.py)과 비트 단위 일치
+  const DEGLAT_M=MARS_R*Math.PI/180;         // 1°(위도) ≈ 59.28km (화성, MARS_R=3396.19km)
+  const metersBetween=(a,b)=>{const kx=Math.cos(18.44*Math.PI/180)*DEGLAT_M; return Math.hypot((a.lon-b.lon)*kx,(a.lat-b.lat)*DEGLAT_M);};
+  const marsDist=(a,b)=>metersBetween({lat:a[0],lon:a[1]},{lat:b[0],lon:b[1]});   // [lat,lon] 배열용 — Leaflet map.distance(지구반지름) 대체
+  // 칸 진입 비용 가중 = Pandolf 대사율(경사 포함) / 평지 대사율  (평지=1, 급경사일수록↑)
+  function metabWeight(slope,load){const G=Math.tan(slope*Math.PI/180)*100; return pandolf(load,1.0,G)/pandolf(load,1.0,0);}
+  let graph=null;
+  function buildGraph(){
+    const n=cells.length; if(!n) return null;
+    const kx=Math.cos(18.44*Math.PI/180)*DEGLAT_M, ky=DEGLAT_M;    // 투영(m): 내부 루프서 cos/삼각함수 제거
+    const xs=new Float64Array(n), ys=new Float64Array(n);
+    for(let i=0;i<n;i++){xs[i]=cells[i].lon*kx; ys[i]=cells[i].lat*ky;}
+    // 칸 간격(step) = 최근접 이웃 거리의 중앙값
+    const nd=new Float64Array(n);
+    for(let i=0;i<n;i++){let m=Infinity,xi=xs[i],yi=ys[i];
+      for(let j=0;j<n;j++){if(i===j)continue; const dx=xs[j]-xi,dy=ys[j]-yi,d=dx*dx+dy*dy; if(d<m)m=d;} nd[i]=Math.sqrt(m);}
+    const step=Array.from(nd).sort((a,b)=>a-b)[n>>1]||160, R2=(step*1.6)**2;   // 1.6·step = 8이웃(대각 √2·step 포함)
+    const nodes=cells.map((c,i)=>({lat:c.lat,lon:c.lon,slope:c.slope,rock:c.rock,x:xs[i],y:ys[i],nbrs:[]}));
+    for(let i=0;i<n;i++){const xi=xs[i],yi=ys[i];
+      for(let j=i+1;j<n;j++){const dx=xs[j]-xi,dy=ys[j]-yi,d2=dx*dx+dy*dy;
+        if(d2<=R2){const d=Math.sqrt(d2); nodes[i].nbrs.push({j,d}); nodes[j].nbrs.push({j:i,d});}}}
+    return {nodes,step};
+  }
+  function nearestNode(lat,lon){let bi=-1,bd=Infinity,p={lat,lon};
+    for(let i=0;i<graph.nodes.length;i++){const d=metersBetween(graph.nodes[i],p); if(d<bd){bd=d;bi=i;}} return bi;}
+  function astar(si,gi,load){   // 최소비용 경로 (이진힙)
+    const nodes=graph.nodes,N=nodes.length,goal=nodes[gi];
+    const g=new Array(N).fill(Infinity),came=new Int32Array(N).fill(-1),closed=new Uint8Array(N),heap=[];
+    const push=(f,i)=>{heap.push([f,i]);let c=heap.length-1;while(c>0){const p=(c-1)>>1;if(heap[p][0]<=heap[c][0])break;[heap[p],heap[c]]=[heap[c],heap[p]];c=p;}};
+    const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let c=0;for(;;){let l=2*c+1,r=l+1,s=c;if(l<heap.length&&heap[l][0]<heap[s][0])s=l;if(r<heap.length&&heap[r][0]<heap[s][0])s=r;if(s===c)break;[heap[s],heap[c]]=[heap[c],heap[s]];c=s;}}return top;};
+    g[si]=0; push(metersBetween(nodes[si],goal),si);
+    while(heap.length){const i=pop()[1]; if(closed[i])continue; closed[i]=1; if(i===gi)break;
+      for(const {j,d} of nodes[i].nbrs){ if(closed[j]||nodes[j].slope>SLOPE_BLOCK)continue;   // 급경사 칸 진입 금지
+        const ng=g[i]+d*metabWeight(nodes[j].slope,load)*(1+ROCK_PENALTY*(nodes[j].rock||0)); if(ng<g[j]){g[j]=ng;came[j]=i;push(ng+metersBetween(nodes[j],goal),j);}}}
+    if(g[gi]===Infinity) return null;
+    const path=[]; for(let c=gi;c!==-1;c=came[c]) path.push(c); return path.reverse();
+  }
+  const pathLine=L.polyline([],{color:'#0ff',weight:3,opacity:.9,dashArray:'6 4'}).addTo(map);
+  let PATH=null,PATHcum=null,PATHlen=0,reachable=true;
+  function clearPath(){PATH=null;PATHcum=null;PATHlen=0;pathLine.setLatLngs([]);}
+  function computePath(tgt,load){
+    if(!graph) graph=buildGraph();
+    if(!graph){reachable=true; clearPath(); return;}            // 격자 없음 → 직선 폴백
+    const gi=nearestNode(tgt.lat,tgt.lon);
+    if(graph.nodes[gi].slope>SLOPE_BLOCK){reachable=false; clearPath(); return;}   // 목적지 칸 자체가 급경사
+    const idx=astar(nearestNode(BASE[0],BASE[1]),gi,load);
+    if(!idx){reachable=false; clearPath(); return;}             // 급경사에 막혀 도달 불가
+    const pts=[[BASE[0],BASE[1]]];
+    for(const k of idx) pts.push([graph.nodes[k].lat,graph.nodes[k].lon]);
+    pts.push([tgt.lat,tgt.lon]);
+    PATH=pts; PATHcum=[0]; let tot=0;
+    for(let i=1;i<pts.length;i++){tot+=metersBetween({lat:pts[i-1][0],lon:pts[i-1][1]},{lat:pts[i][0],lon:pts[i][1]}); PATHcum.push(tot);}
+    PATHlen=tot; reachable=true; pathLine.setLatLngs(pts);
+  }
+  function posAlongPath(d){   // 기지에서 경로 따라 간 거리(m) → [lat,lon]
+    if(!PATH) return null; d=Math.max(0,Math.min(d,PATHlen));
+    let i=1; while(i<PATHcum.length && PATHcum[i]<d) i++;
+    if(i>=PATH.length) return PATH[PATH.length-1];
+    const t=(d-PATHcum[i-1])/Math.max(PATHcum[i]-PATHcum[i-1],1e-9);
+    return [PATH[i-1][0]+(PATH[i][0]-PATH[i-1][0])*t, PATH[i-1][1]+(PATH[i][1]-PATH[i-1][1])*t];
+  }
+
+  // ── 지점(인라인) ──
+  const SPOTS=[
+    {name:"델타 전선",lat:18.472,lon:77.424,score:92,note:"함수광물 노두·생명점수 최고",img:"https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00400/ids/edr/browse/zcam/ZR0_0400_0702461657_553EBY_N0191126ZCAM07114_0340LUJ01_1200.jpg"},
+    {name:"Cheyava 방향",lat:18.492,lon:77.440,score:85,note:"바이오시그니처 후보",img:"https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00401/ids/edr/browse/zcam/ZL0_0401_0702535082_292EBY_N0191126ZCAM05100_1100LMJ01_1200.jpg"},
+    {name:"Hawksbill Gap",lat:18.458,lon:77.434,score:78,note:"퇴적층 단면",img:"https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00401/ids/edr/browse/ncam/NLE_0401_0702543750_942ECM_N0192066SAPP00601_00_0LLJ01_1200.jpg"},
+    {name:"Séítah",lat:18.433,lon:77.406,score:54,note:"모래·화성암",img:"https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00400/ids/edr/browse/ncam/NLE_0400_0702456078_362ECM_N0191126SAPP00601_00_0LLJ01_1200.jpg"}
+  ];
+  let target=null;
+  L.circleMarker(BASE,{radius:8,color:'#fff',fillColor:'#3af',fillOpacity:1,weight:2}).addTo(map).bindTooltip('기지(착륙지)',{permanent:true,direction:'top'});
+  const ring=L.circle(BASE,{radius:850,color:'#5c6',fillColor:'#5c6',fillOpacity:0.08,weight:2}).addTo(map);
+  const astro=L.circleMarker(BASE,{radius:7,color:'#fff',fillColor:'#e33',fillOpacity:1,weight:2}).addTo(map).bindTooltip('대원',{permanent:true,direction:'bottom'});
+  // 핀 생명점수 = '점수가 있는 가장 가까운 칸'(반경 내) 우선, 없으면 하드코딩 추정값 폴백
+  const DEG_M=DEGLAT_M, SCORE_RADIUS_M=800;   // 화성 기준 통일 · 반경 800m(~5칸) 밖이면 폴백
+  function spotScore(s){
+    let best=null,bd=Infinity;
+    for(const c of cells){ if(c.score==null) continue;
+      const dy=c.lat-s.lat, dx=(c.lon-s.lon)*Math.cos(s.lat*Math.PI/180);
+      const d=dy*dy+dx*dx; if(d<bd){bd=d;best=c;} }
+    if(best && Math.sqrt(bd)*DEG_M<=SCORE_RADIUS_M) return {val:Math.round(best.score),src:'격자(실데이터)'};
+    return {val:s.score,src:'추정'};
+  }
+  SPOTS.forEach(s=>{const sc=spotScore(s); s.liveScore=sc.val; const col=sc.val>=80?'#2a7':sc.val>=65?'#ca3':'#a55';
+    L.circleMarker([s.lat,s.lon],{radius:9,color:'#fff',fillColor:col,fillOpacity:.9,weight:2}).addTo(map)
+      .bindPopup(`<div class="pop"><b>${s.name}</b><br>생명점수 <b>${sc.val}</b>/100 <span style="font-size:10px;color:#8ac">${sc.src}</span><br><img src="${s.img}" alt="실사"><span style="font-size:11px;color:#555">${s.note}</span><br><button onclick="setTarget('${s.name}')">목적지로</button></div>`);});
+  window.setTarget=n=>{target=SPOTS.find(s=>s.name===n);set('dname',n);map.closePopup();
+    walked=0;returning=false;done=false;ticks=0;            // 새 목적지 → 새 구간(폭풍 타이밍도 리셋)
+    computePath(target, v('load'));
+    document.getElementById('status').textContent = reachable
+      ? (PATHlen>0 ? `▶ 눌러 출발 · 경로 ${Math.round(PATHlen)}m` : '▶ 눌러 출발')
+      : '⛔ 도달 불가(급경사 차단) — 직선 폴백';};
+
+  // ── 모델 ──
+  const M=80,VO2ABS=3.0,ETA=2.0,GMARS=0.38,O2W=1/348,SUSTAIN=0.35,HR_REST=70,HRMAX=186;
+  const TANK=500,RAD_DAY=0.64,MAXWB=2000,RESERVE=0.15,O2SCALE=0.80;  // O2SCALE: 복귀 완료 시 산소 ~15% 남도록 소모율 스케일(복귀선 로직엔 무영향)
+  const pandolf=(L,v,G)=>1.5*M+2*(M+L)*Math.pow(L/M,2)+ETA*(M+L)*(1.5*v*v+0.35*v*G*GMARS);
+  let o2=TANK,stam=100,dose=0,walked=0,returning=false,timer=null,done=false,ticks=0;
+  // DONKI 우주기상(SPE) — donki_sample.json에서 라이브 로드, 실패 시 인라인 폴백(파일 직접열기 대비)
+  let DONKI={spe:{active:true,onset_tick:10,duration_ticks:30,spike_mSv:1.2,shield_max_pct:20,alert:"방사능 폭풍 — 복귀/차폐"}};
+  fetch('data/donki_sample.json').then(r=>r.json()).then(d=>{if(d&&d.spe)DONKI=d;console.log('[MARSWALK] DONKI 로드:',d.spe?'SPE 이벤트 연동':'이벤트 없음');}).catch(e=>console.warn('[MARSWALK] donki_sample.json 로드 실패 → 인라인 폴백 사용',e));
+  const v=i=>+document.getElementById(i).value,set=(i,x)=>document.getElementById(i).textContent=x;
+  const bar=(i,p,c)=>{const e=document.getElementById(i);e.style.width=Math.max(0,p)+'%';e.style.background=c;};
+  const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+
+  function step(){
+    if(!target) return;
+    ticks++;
+    const load=v('load'),speed=1.0;
+    const total=(reachable && PATHlen>0) ? PATHlen : marsDist(BASE,[target.lat,target.lon]);
+    const rangeLeft=MAXWB*(o2/TANK);
+    const radius=Math.max(0,Math.round((rangeLeft-MAXWB*RESERVE)/2));   // 왕복 ÷2 + 예비분
+    walked+=(returning?-1:1)*speed*3*2;
+    if(walked>=Math.min(total,radius)) returning=true;
+    if(walked<=0){walked=0;returning=false;if(o2<TANK*0.99){stop();done=true;}}
+    // 경로 있으면 A* 폴리라인 따라, 없으면 직선(폴백)
+    const pos=(reachable && PATHlen>0) ? posAlongPath(walked) : lerp(BASE,[target.lat,target.lon],Math.min(walked/total,1));
+    astro.setLatLng(pos);
+
+    // 발밑 경사 = 실데이터 격자 우선, 없으면 슬라이더
+    const cell=cellAt(pos[0],pos[1]); let slope,src,comm='–';
+    if(cell){slope=cell.slope;src='(실데이터)';comm=cell.comm==='shadow'?'🔴 음영':'🟢 양호';}
+    else {slope=v('slope');src='(수동)';}
+    const G=Math.tan(slope*Math.PI/180)*100;
+
+    const burn=pandolf(load,speed,returning?0:G)*O2W;
+    o2-=burn*3*O2SCALE; if(o2<0)o2=0;
+    const pct=burn/VO2ABS;
+    const hr=Math.min(Math.round(HR_REST+(HRMAX-HR_REST)*pct),HRMAX);
+    // 지형 차폐 shF: 음영(지형에 가린 저지) 칸이면 하늘 노출↓ → 선량↓ (radiation.json 최대 차폐율)
+    const SHIELD=((DONKI.spe&&DONKI.spe.shield_max_pct!=null)?DONKI.spe.shield_max_pct:20)/100;
+    const shF=(cell && cell.comm==='shadow') ? (1-SHIELD) : 1.0;
+    dose+=(RAD_DAY/1440)*3*shF;                          // 배경 선량(지형차폐 반영)
+    // DONKI SPE '활성' 구간 → 선량률 급증 (지형차폐도 적용)
+    let storm=false;
+    if(DONKI.spe && DONKI.spe.active){
+      const sp=DONKI.spe;
+      storm = ticks>=sp.onset_tick && ticks<(sp.onset_tick+sp.duration_ticks);
+      if(storm) dose += (sp.spike_mSv!=null?sp.spike_mSv:1.2)*shF;   // 폭풍 선량률 급증
+    }
+    stam+=(pct>SUSTAIN?-14*(pct-SUSTAIN):8*(SUSTAIN-pct)); stam=Math.min(Math.max(stam,0),100);
+
+    ring.setRadius(radius);
+    const distBase=walked; let st,bg;
+    if(o2<=0){st='🛑 산소 고갈';bg='#722';stop();}
+    else if(returning){st='↩ 복귀 중';bg='#152';}
+    else if(distBase>=radius){st='🔴 복귀선 도달 — 귀환';bg='#722';returning=true;}
+    else if(distBase>radius*0.8){st='🟡 복귀선 근접';bg='#650';}
+    else {st='🟢 전진 여유';bg='#152';}
+    ring.setStyle({color:distBase>=radius?'#e55':'#5c6',fillColor:distBase>=radius?'#e55':'#5c6'});
+    if(!reachable && o2>0){ st='⛔ 도달불가(급경사 차단) · 직선폴백'; bg='#722'; }
+    if(storm && o2>0){ st='🔴 방사능 폭풍 — 복귀/차폐'+(shF<1?' (지형차폐 중)':''); bg='#811'; }
+    if(done){ st='✅ 복귀 완료'; bg='#152'; }
+
+    set('status',st); document.getElementById('status').style.background=bg;
+    set('o2p',Math.round(o2/TANK*100)); set('stam',Math.round(stam)); set('dose',dose.toFixed(2)); set('hr',hr);
+    set('gslope',slope.toFixed(1)); set('gsrc',src); set('gcomm',comm);
+    set('slopeV',v('slope')); set('loadV',load);
+    bar('o2bar',o2/TANK*100,o2<TANK*.25?'#e55':'#4af');
+    bar('stambar',stam,stam<25?'#e55':'#6c6');
+    bar('dosebar',Math.min(dose/2*100,100),(storm||dose>=1)?'#e55':'#fa3');
+  }
+  function stop(){clearInterval(timer);timer=null;}
+  document.getElementById('go').onclick=()=>{if(!target){set('status','먼저 목적지 선택!');return;}
+    if(done){walked=0;returning=false;done=false;ticks=0;}   // 완료 후 재시작 → 새 구간
+    computePath(target, v('load'));                         // 현재 적재무게로 경로 재계산
+    if(timer)return; timer=setInterval(step,120);};
+  document.getElementById('reset').onclick=()=>{stop();o2=TANK;stam=100;dose=0;walked=0;returning=false;done=false;ticks=0;
+    astro.setLatLng(BASE);ring.setRadius(850);set('status','목적지를 골라요');document.getElementById('status').style.background='#152';};
+  document.getElementById('slope').oninput=e=>set('slopeV',e.target.value);
+  document.getElementById('load').oninput=e=>set('loadV',e.target.value);
+</script>
+</body></html>

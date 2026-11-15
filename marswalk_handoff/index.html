@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<title>MARSWALK — Jezero</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<style>html,body,#map{height:100%;margin:0}</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  // Jezero 크레이터 중심 (대략 18.44°N, 77.45°E)
+  const map = L.map('map').setView([18.44, 77.45], 10);
+
+  // ① 화성 베이스맵 (OpenPlanetary 타일 — 불러오기만)
+  L.tileLayer(
+    'https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-2/all/{z}/{x}/{y}.png',
+    { attribution: 'OpenPlanetary · NASA', maxZoom: 12 }
+  ).addTo(map);
+
+  // ② 샘플 탐사 후보 지점 (좌표는 대략값 — 나중에 보정)
+  const spots = [
+    { name: 'Octavia E. Butler 착륙지', lat: 18.44, lon: 77.45 },
+    { name: '델타 전선 (함수광물 유력)', lat: 18.47, lon: 77.42 },
+    { name: 'Cheyava Falls (로봇 발견)', lat: 18.63, lon: 77.38 }
+  ];
+  spots.forEach(s =>
+    L.circleMarker([s.lat, s.lon], { radius: 8, color: '#ff5252', fillColor: '#ff5252', fillOpacity: 0.85 })
+      .addTo(map)
+      .bindPopup('<b>' + s.name + '</b>')
+  );
+</script>
+</body>
+</html>

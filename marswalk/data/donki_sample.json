@@ -1,0 +1,18 @@
+{
+  "_desc": "우주기상 리플레이용 샘플 (② 계획 · ⑥ 경보). 실제는 DONKI API 라이브.",
+  "_source": "api.nasa.gov/DONKI · check_apis.py로 확인됨(2024-05 태양활동)",
+  "event": {
+    "messageType": "FLR",
+    "messageIssueTime": "2024-05-10T06:51Z",
+    "note": "2024-05 대형 태양활동기 — 리플레이 데모용. 실 운용은 /DONKI/notifications 라이브 호출"
+  },
+  "spe": {
+    "active": true,
+    "onset_tick": 10,
+    "duration_ticks": 30,
+    "spike_mSv": 1.2,
+    "shield_max_pct": 20,
+    "alert": "방사능 폭풍 — 복귀/차폐",
+    "_note": "DONKI FLR/SEP 리플레이 → 데모 시뮬 '틱' 기준 활성 구간(onset~onset+duration). 활성 중 선량률 급증 dose += spike_mSv·shF. spike_mSv=radiation.json spe_spike_mSv[0]. shF=지형차폐(음영 칸 -shield_max_pct%, radiation.json terrain_shielding_max_pct). 실운용은 DONKI 라이브 이벤트 시각↔EVA 시계로 매핑."
+  }
+}

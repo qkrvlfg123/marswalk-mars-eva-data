@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<title>MARSWALK — 다중 소모품 복귀선</title>
+<style>
+  body{margin:0;background:#0d0d14;color:#eee;font-family:sans-serif;padding:18px;max-width:460px;margin:auto}
+  h2{margin:0 0 2px} .sub{color:#888;font-size:12px;margin-bottom:14px}
+  label{display:block;margin:9px 0 2px;color:#9a9;font-size:13px} input[type=range]{width:100%}
+  #bind{text-align:center;font-size:18px;font-weight:800;padding:9px;border-radius:8px;margin:12px 0;background:#152}
+  .c{margin:9px 0}
+  .crow{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
+  .bar{height:16px;border-radius:4px;background:#222;overflow:hidden}
+  .fill{height:100%;transition:width .3s,background .3s}
+  button{background:#2b6;border:0;color:#042;font-weight:700;padding:7px 14px;border-radius:6px;cursor:pointer;margin:10px 4px 0 0}
+  button.pause{background:#c54;color:#fff}
+  .tag{font-size:11px;color:#777}
+</style>
+</head>
+<body>
+<h2>🎒 다중 소모품 복귀선</h2>
+<div class="sub">복귀 한계 = 산소·냉각수·CO₂·배터리 중 <b>제일 먼저 바닥나는 것</b> (아폴로 PLSS 기준)</div>
+
+<label>지형 경사: <span id="slopeV">8</span>°</label><input type="range" id="slope" min="0" max="25" value="8">
+<label>적재 무게: <span id="loadV">20</span> kg</label><input type="range" id="load" min="0" max="50" value="20">
+
+<button id="go">▶ EVA 시작</button><button id="reset" class="pause">⟳ 리셋</button>
+<span id="clock" style="color:#888;font-size:13px">T+00:00</span>
+
+<div id="bind">–</div>
+
+<div class="c"><div class="crow"><span>🫙 산소</span><span><span id="o2m">480</span>분</span></div><div class="bar"><div class="fill" id="o2b" style="width:100%;background:#4af"></div></div></div>
+<div class="c"><div class="crow"><span>💧 냉각수 <span class="tag">(열↑일수록 빨리)</span></span><span><span id="fwm">450</span>분</span></div><div class="bar"><div class="fill" id="fwb" style="width:100%;background:#3cc"></div></div></div>
+<div class="c"><div class="crow"><span>🌫️ CO₂ 스크러버</span><span><span id="com">500</span>분</span></div><div class="bar"><div class="fill" id="cob" style="width:100%;background:#9a6"></div></div></div>
+<div class="c"><div class="crow"><span>🔋 배터리 <span class="tag">(일정 소모)</span></span><span><span id="bam">420</span>분</span></div><div class="bar"><div class="fill" id="bab" style="width:100%;background:#fb5"></div></div></div>
+
+<script>
+  // Pandolf 대사율 (watts)
+  const M=80, ETA=2.0, GMARS=0.38;
+  const pandolf=(L,v,G)=>1.5*M+2*(M+L)*Math.pow(L/M,2)+ETA*(M+L)*(1.5*v*v+0.35*v*G*GMARS);
+  const M0=273;   // 기준 대사율 (~930 BTU/hr, 아폴로 8h 기준)
+
+  // 소모품 용량(분, 기준 대사율에서). 아폴로 PLSS 비율 기반.
+  const CAP={o2:480, fw:450, co:500, ba:420};
+  let rem={...CAP}, t=0, timer=null;
+  const dtMin=3;
+
+  function step(){
+    const slope=+v('slope'), load=+v('load'), speed=1.0, G=Math.tan(slope*Math.PI/180)*100;
+    const MW=pandolf(load,speed,G);
+    const f=MW/M0;                 // 대사율 배수 (산소·냉각수·CO₂가 이만큼 빨리)
+    // 소모 (배터리만 일정)
+    rem.o2 -= dtMin*f; rem.fw -= dtMin*f*1.05; rem.co -= dtMin*f*0.95; rem.ba -= dtMin*1.0;
+    for(const k in rem) if(rem[k]<0) rem[k]=0;
+    t += dtMin;
+
+    // 현재 대사율에서 "복귀까지 남은 분" = 잔여 / 소모배수
+    const left={ o2:rem.o2/f, fw:rem.fw/(f*1.05), co:rem.co/(f*0.95), ba:rem.ba/1.0 };
+    const names={o2:'산소', fw:'냉각수', co:'CO₂', ba:'배터리'};
+    let bindKey='o2';
+    for(const k in left) if(left[k]<left[bindKey]) bindKey=k;
+    const bindMin=Math.round(left[bindKey]);
+
+    // 표시
+    show('o2',rem.o2,CAP.o2,bindKey==='o2'); show('fw',rem.fw,CAP.fw,bindKey==='fw');
+    show('co',rem.co,CAP.co,bindKey==='co'); show('ba',rem.ba,CAP.ba,bindKey==='ba');
+    const b=document.getElementById('bind');
+    if(bindMin<=0){ b.textContent='🛑 '+names[bindKey]+' 고갈 — EVA 종료'; b.style.background='#722'; stop(); }
+    else { b.textContent='↩ 복귀 한계: '+names[bindKey]+' · '+bindMin+'분';
+           b.style.background = bindMin<60?'#722':bindMin<120?'#650':'#152'; }
+    document.getElementById('clock').textContent='T+'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+    document.getElementById('slopeV').textContent=slope; document.getElementById('loadV').textContent=load;
+  }
+  function show(k,val,cap,bind){
+    const pct=val/cap*100;
+    document.getElementById(k+'m').textContent=Math.round(val);
+    const e=document.getElementById(k+'b');
+    e.style.width=pct+'%';
+    e.style.outline = bind?'2px solid #fff':'none';
+  }
+  function v(i){return document.getElementById(i).value}
+  function stop(){clearInterval(timer);timer=null;go.textContent='▶ 재개';go.classList.remove('pause');}
+  const go=document.getElementById('go');
+  go.onclick=()=>{ if(timer){stop();} else {timer=setInterval(step,600);go.textContent='⏸ 정지';go.classList.add('pause');} };
+  document.getElementById('reset').onclick=()=>{stop();rem={...CAP};t=0;step();};
+  ['slope','load'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(!timer)step()}));
+  step();
+</script>
+</body>
+</html>
