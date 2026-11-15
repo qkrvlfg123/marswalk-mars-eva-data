@@ -34,10 +34,10 @@ score = Σ(wᵢ·Sᵢ, 투입된 i) / Σ(wᵢ, 투입된 i) / 4 × 100     # 가
 
 ```bash
 # 1) 지질맵 → S2 래스터 (SIM3464 GeoUnits_v1 폴리곤 → 유닛별 S2 0~4)
-python make_s2.py                     # → data/s2_jezero.tif
+python scripts/make_s2.py             # → data/s2_jezero.tif
 
-# 2) 생명점수 격자 (S1 CRISM + S2 지질 + DEM 경사/교신)
-python build_grid.py --dem jezero_dem.tif \
+# 2) 생명점수 격자 (S1 CRISM + S2 지질 + DEM 경사/교신 + rock 열관성)
+python scripts/build_grid.py --dem jezero_dem.tif \
   --crism zenodo_5575824/jezeroFinal.tif \
   --geo data/s2_jezero.tif --geo-scored \
   --rock zenodo_4931348/Jezero_Thermal_Inertia_v1.tiff \
@@ -48,9 +48,9 @@ python build_grid.py --dem jezero_dem.tif \
 
 ---
 
-## 📦 핸드오프 zip 내용물 (`marswalk_handoff.zip`) — 파일별 설명
+## 📦 repo 구조 — 파일별 설명
 
-> 압축 풀면 `marswalk_handoff/` 하위에 아래 구조. **대용량 원본(DEM·CRISM·SIM3464·PhysioNet)은 미포함** — 재현 시 `docs/6_raw_downloads.md` 링크로 받으세요.
+> 정본 단일 구조: `/README.md` · `/marswalk_grid_demo.html` · `/grid.geojson` · `/grid.js` · `/data` · `/scripts` · `/docs`(1~12). **대용량 원본(DEM·CRISM·THEMIS·SIM3464·PhysioNet)은 미포함(.gitignore)** — 재현 시 `docs/6_raw_downloads.md` 링크로 받으세요. 배포 zip은 GitHub Releases로.
 
 **루트**
 
@@ -74,6 +74,8 @@ python build_grid.py --dem jezero_dem.tif \
 | `7_biosignature_design.md` | 생명점수 상세 설계 — 지표 순위·ROC 가중치·S1/S2 루브릭·구현 현황 |
 | `8_grid_guide.md` | `build_grid.py` 격자 전처리 가이드(속성·실행·앱 연동) |
 | `9_verification_status.md` | 생명점수 격자 검증 현황 — 커버리지·score 분포·핀 4개 |
+| `10_todo.md` | 추후 할 일(TODO) — 개발 전환·데이터 조이기·발표 준비 |
+| `11_hud_spec.md` | HUD 데이터 매핑 명세 — 현장(HUD) 요소가 PAD의 어느 데이터/모델을 읽나 |
 | `12_api_data_spec.md` | **데이터·API 계약서** — grid.geojson/data json 실제 필드·타입, 모델 함수 시그니처·상수, 런타임 흐름. React+Leaflet+Recharts+Zustand 이식용 |
 
 **data/ — 앱 입력 데이터**
@@ -122,4 +124,4 @@ python build_grid.py --dem jezero_dem.tif \
 - **S2** 지질맵 — Sun & Stack (2020) USGS SIM 3464 — https://doi.org/10.3133/sim3464
 - **암석 피복(rock)** 열관성 — Edwards & Buz (2021) THEMIS Jezero TI — https://doi.org/10.5281/zenodo.4931348
 - **보존 근거** — Broz (2020) *Life* 10.3390/life10070113 · iMOST (Des Marais 2018)
-- 상세 설계·근거는 `marswalk_handoff/docs/` 참조.
+- 상세 설계·근거는 `docs/` 참조.
