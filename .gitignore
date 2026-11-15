@@ -19,6 +19,9 @@ sim3464_extract/
 __pycache__/
 *.pyc
 
+# 빌드 산출물 — 배포 zip은 소스 repo에서 제외(필요 시 GitHub Releases로 배포)
+*.zip
+
 # ── 아래는 '포함'(참고용 명시, 무시 안 함) ──
 # !data/s2_jezero.tif
 # !grid.geojson
