@@ -31,7 +31,7 @@
   <div class="stat">🫙 산소 <span id="o2p">100</span>%</div><div class="bar"><div class="fill" id="o2bar" style="background:#4af"></div></div>
   <div class="stat">💪 체력 <span id="stam">100</span>%</div><div class="bar"><div class="fill" id="stambar" style="background:#6c6"></div></div>
   <div class="stat">☢️ 피폭 <span id="dose">0.00</span> mSv</div><div class="bar"><div class="fill" id="dosebar" style="width:0%;background:#fa3"></div></div>
-  <div class="stat">❤️ 심박 <span id="hr">70</span> bpm · 🎯 <span id="dname">–</span></div>
+  <div class="stat">❤️ 심박 <span id="hr">71</span> bpm · 🎯 <span id="dname">–</span></div>
   <div class="stat">⛰ 발밑 경사 <span id="gslope">–</span>° <span id="gsrc" style="color:#8ac"></span></div>
   <div class="stat">📡 교신 <span id="gcomm">–</span></div>
   <label>경사(수동, grid 없을 때만): <span id="slopeV">8</span>°</label><input type="range" id="slope" min="0" max="25" value="8">
@@ -177,7 +177,9 @@
       : '⛔ 도달 불가(급경사 차단) — 직선 폴백';};
 
   // ── 모델 ──
-  const M=80,VO2ABS=3.0,ETA=2.0,GMARS=0.38,O2W=1/348,SUSTAIN=0.35,HR_REST=70,HRMAX=186;
+  const M=80,VO2ABS=3.0,ETA=2.0,GMARS=0.38,O2W=1/348,SUSTAIN=0.35;
+  // 심박: PhysioNet 트레드밀 992건 실측 보정 HR = 70.5 + 113.2·%VO2 (R2=0.77) · HRmax = 220-34 캡
+  const HR_A=70.5,HR_B=113.2,HRMAX=186;
   const TANK=500,RAD_DAY=0.64,MAXWB=2000,RESERVE=0.15,O2SCALE=0.80;  // O2SCALE: 복귀 완료 시 산소 ~15% 남도록 소모율 스케일(복귀선 로직엔 무영향)
   const pandolf=(L,v,G)=>1.5*M+2*(M+L)*Math.pow(L/M,2)+ETA*(M+L)*(1.5*v*v+0.35*v*G*GMARS);
   let o2=TANK,stam=100,dose=0,walked=0,returning=false,timer=null,done=false,ticks=0;
@@ -211,7 +213,7 @@
     const burn=pandolf(load,speed,returning?0:G)*O2W;
     o2-=burn*3*O2SCALE; if(o2<0)o2=0;
     const pct=burn/VO2ABS;
-    const hr=Math.min(Math.round(HR_REST+(HRMAX-HR_REST)*pct),HRMAX);
+    const hr=Math.min(Math.round(HR_A+HR_B*pct),HRMAX);
     // 지형 차폐 shF: 음영(지형에 가린 저지) 칸이면 하늘 노출↓ → 선량↓ (radiation.json 최대 차폐율)
     const SHIELD=((DONKI.spe&&DONKI.spe.shield_max_pct!=null)?DONKI.spe.shield_max_pct:20)/100;
     const shF=(cell && cell.comm==='shadow') ? (1-SHIELD) : 1.0;

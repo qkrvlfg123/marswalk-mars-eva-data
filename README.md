@@ -60,7 +60,7 @@ O2_rate / VO2abs      →  운동강도 %VO₂               [VO2peak 37.5 ml/kg
 - **쓴 데이터:** PhysioNet 트레드밀 최대운동검사 — **992건 검사, 약 57만 샘플**(심박·VO₂·속도 동시 기록). Mongin D, García Romero J, Alvero Cruz JR (2021), 말라가대 운동생리학 실험실.
   DOI [10.13026/7ezk-j442](https://doi.org/10.13026/7ezk-j442) · 라이선스 PhysioNet Contributor Review Health Data License 1.5.0
 - **정제:** 검사별로 VO₂ 95퍼센타일을 개인 최대로 잡아 `%VO₂`로 정규화 → 심박 40~220 bpm·VO₂>0 구간만 남김 → 유효 샘플 10개 미만 검사는 제외.
-- **보정 결과:** 전 샘플 1차 회귀로 **`HR = 70.5 + 113.2·%VO₂` (R²=0.77)**. 데모가 쓰던 눈대중 값(`70 + 116·%VO₂`)과 거의 같은 값이 실측에서 나와, 모델을 실측 기반으로 교체할 근거가 됨.
+- **보정 결과:** 전 샘플 1차 회귀로 **`HR = 70.5 + 113.2·%VO₂` (R²=0.77)**. 데모가 쓰던 눈대중 값(`70 + 116·%VO₂`)과 거의 같은 값이 실측에서 나와 모델을 실측 기반으로 교체할 근거가 됨. `marswalk_grid_demo.html`도 이 보정값(`HR_A=70.5`, `HR_B=113.2`, HRmax 186 캡)으로 돌아감.
 - **산출:** 보정 곡선 + Pandolf(화성 중력 반영)로 EVA 시나리오 6스텝을 합성 → `data/synthetic_eva.json`.
 - **스크립트:** [`scripts/calibrate_hr.py`](scripts/calibrate_hr.py)
 
@@ -260,7 +260,6 @@ python scripts/gen_biosignature.py    # → data/weights.json
 - **S1 커버리지 81.1%** — CRISM 미식별(검정) 칸은 보간하지 않고 비워 둠. 점수는 가용 지표만 재정규화해 산출.
 - **생체 신호는 지상 실측 보정 + 화성 조건 계산의 조합** — 우주인 실시간 생체 피드는 공개 데이터가 없음. 심박↔%VO₂ 곡선만 PhysioNet 실측으로 받치고, 화성 중력·하중·경사는 Pandolf로 계산함. 실제 수트 텔레메트리로 교체 가능한 구조.
 - **`synthetic_eva.json`의 `sustainable` 플래그 기준** — %VO₂ 1.0(VO2peak 도달) 초과 여부임. 체력(W′) 모델의 지속가능 임계 **0.35**와는 다른 기준이라 둘을 구분해 읽어야 함. 파일의 `_sustainable_def` 키와 `calibrate_hr.py`의 `AEROBIC_CAP` 상수에 이 정의를 박아 둠.
-- **데모 HTML의 심박식** — `marswalk_grid_demo.html`은 `HR = 70 + 116·%VO₂` 형태(HR_rest 70, HRmax 186)로 돌고, 실측 보정값은 `70.5 + 113.2·%VO₂`임. 두 값 차이는 작지만 앱 이식 시엔 보정값 쪽을 권장함.
 - **`spots.json`의 score 값은 폴백용 추정치** — 실제 표시 점수는 격자(`grid.js`)에서 읽음. 핀 반경 800m 안에 점수 칸이 없을 때만 파일값으로 떨어짐.
 - **교신 음영은 DEM 시선 근사** — 실제 전파 회절·중계는 반영하지 않음. DONKI 이벤트 시각은 지구 기준.
 

@@ -257,7 +257,7 @@ f  = M_W / M0
 
 ## 11. 심박 — 실측 검증값 (§5 업데이트)
 `HR = 70.5 + 113.2·%VO2` (PhysioNet 992명 실측 보정, R²=0.77), HRmax 186 캡.
-→ §5의 데모값(70+116) 대신 이 검증값 사용 권장. 스크립트 `scripts/calibrate_hr.py`.
+→ 참조 구현 `marswalk_grid_demo.html`도 이 검증값(`HR_A=70.5`, `HR_B=113.2`, HRmax 186 캡)으로 동작함. 스크립트 `scripts/calibrate_hr.py`.
 
 
 ---
