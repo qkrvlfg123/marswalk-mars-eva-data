@@ -171,8 +171,8 @@ python scripts/build_grid.py --dem jezero_dem.tif \
   --out grid.js --clip-km 5 --cell-px 8 --antenna-h 15
 
 # 3) 생체 신호 — 심박식 실측 보정 + 합성 EVA 시계열
-#    PhysioNet 원본을 ./physionet_data/ 에 받은 뒤 실행 (보정계수는 콘솔 출력)
-python scripts/calibrate_hr.py        # → synthetic_eva.json
+#    PhysioNet 원본을 ./physionet_data/ 에 받은 뒤 실행 (보정계수·R²는 콘솔 출력)
+python scripts/calibrate_hr.py        # → data/synthetic_eva.json
 
 # 4) 생명점수 가중치 (지표 순위 → ROC/RS 숫자)
 python scripts/gen_biosignature.py    # → data/weights.json
@@ -259,7 +259,7 @@ python scripts/gen_biosignature.py    # → data/weights.json
 - **S5(로버 근접) 미투입** — Perseverance 트래버스 레이어를 넣으면 score가 자동 재혼합됨. 남은 과학지표 중 유일한 공백.
 - **S1 커버리지 81.1%** — CRISM 미식별(검정) 칸은 보간하지 않고 비워 둠. 점수는 가용 지표만 재정규화해 산출.
 - **생체 신호는 지상 실측 보정 + 화성 조건 계산의 조합** — 우주인 실시간 생체 피드는 공개 데이터가 없음. 심박↔%VO₂ 곡선만 PhysioNet 실측으로 받치고, 화성 중력·하중·경사는 Pandolf로 계산함. 실제 수트 텔레메트리로 교체 가능한 구조.
-- **`synthetic_eva.json`의 `sustainable` 플래그 기준** — %VO₂ 1.0(VO2peak 도달) 경계로 표기돼 있음. 체력(W′) 모델의 지속가능 임계 **0.35**와는 다른 기준이라 둘을 구분해 읽어야 함.
+- **`synthetic_eva.json`의 `sustainable` 플래그 기준** — %VO₂ 1.0(VO2peak 도달) 초과 여부임. 체력(W′) 모델의 지속가능 임계 **0.35**와는 다른 기준이라 둘을 구분해 읽어야 함. 파일의 `_sustainable_def` 키와 `calibrate_hr.py`의 `AEROBIC_CAP` 상수에 이 정의를 박아 둠.
 - **데모 HTML의 심박식** — `marswalk_grid_demo.html`은 `HR = 70 + 116·%VO₂` 형태(HR_rest 70, HRmax 186)로 돌고, 실측 보정값은 `70.5 + 113.2·%VO₂`임. 두 값 차이는 작지만 앱 이식 시엔 보정값 쪽을 권장함.
 - **`spots.json`의 score 값은 폴백용 추정치** — 실제 표시 점수는 격자(`grid.js`)에서 읽음. 핀 반경 800m 안에 점수 칸이 없을 때만 파일값으로 떨어짐.
 - **교신 음영은 DEM 시선 근사** — 실제 전파 회절·중계는 반영하지 않음. DONKI 이벤트 시각은 지구 기준.

@@ -1,6 +1,7 @@
 {
   "_source": "PhysioNet treadmill (992 tests, 57만 샘플) 실측 보정",
   "_model": "HR = 70.5 + 113.2*pctVO2 (R2=0.77), HRmax cap 186",
+  "_sustainable_def": "pctVO2 <= 1.0 (VO2peak 도달 여부). 체력(W') 모델의 지속가능 임계 0.35와는 다른 기준",
   "scenario": [
     {
       "t_min": 0,
