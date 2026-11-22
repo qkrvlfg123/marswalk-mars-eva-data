@@ -87,7 +87,7 @@
 | 유형 | 파일/수량 | 출처·라이선스 | 상태 |
 |---|---|---|---|
 | 3D 모델 | `public/models/nasa/mark-iii-spacesuit.glb` | NASA 3D Resources · NASA 미디어지침(퍼블릭) | ✅ (버전 메타 ⚠️W2) |
-| 3D 모델 | ~~eva/operator/rover(EVOVA)~~ | **2026-11-15 제거·`.gitignore`** | ✅ (배포 미포함, Mark III+절차적 폴백 — 라이브 검증 완료) |
+| 3D 모델 | eva/operator/rover(EVOVA) — 사용 안 함 | **2026-11-15 제거·`.gitignore`** | ✅ (배포 미포함, Mark III+절차적 폴백 — 라이브 검증 완료) |
 | 3D 메시(지형) | Hazcam/Navcam terrain mesh | NASA/JPL-Caltech PDS(퍼블릭) | ✅ `SOURCES.json` |
 | 텍스처 ×7 | `public/textures/polyhaven/` | Poly Haven **CC0 1.0** | ✅ `LICENSES.json` |
 | HUD 에셋 ×20 | `public/assets/hud/*.webp` | **OpenAI 이미지 생성**(output 사용자 소유, OpenAI Terms) | ⚠️ W1 (출처 기재됨·제출 AI칸 확인) |
