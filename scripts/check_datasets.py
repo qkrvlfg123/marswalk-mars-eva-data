@@ -1,5 +1,5 @@
 """생체 데이터셋 다운로드 가능 여부 확인.
-실행:  pip install requests  →  python check_datasets.py
+실행:  pip install requests  →  python scripts/check_datasets.py   (네트워크 필요)
 """
 import requests
 

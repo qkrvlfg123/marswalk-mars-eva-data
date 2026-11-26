@@ -4,6 +4,6 @@
   "weight_kg": {"value": 80, "source": "대표값 (입력 대상)"},
   "vo2peak": {"value": 37.5, "unit": "ml/kg/min", "source": "ISS 남성 평균 · NTRS 20220014309"},
   "sustainable_pct": {"value": 0.35, "source": "VO2peak 30~40% · NTRS 20220014309"},
-  "hr_model": {"formula": "HR = 70.5 + 113.2*pctVO2", "r2": 0.77, "source": "PhysioNet 992명 실측 · DOI 10.13026/7ezk-j442"},
+  "hr_model": {"formula": "HR = 70.5 + 113.2*pctVO2", "r2": 0.77, "source": "PhysioNet 검사 992건 실측 · DOI 10.13026/7ezk-j442"},
   "hrmax": {"formula": "220 - age", "value": 186}
 }

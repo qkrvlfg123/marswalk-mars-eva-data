@@ -1,43 +1,98 @@
 {
-  "_what": "지도 레이어 = 두 그룹. 과학 레이어는 '생명점수'로 합쳐지고, 안전 레이어는 '게이트'로 추천을 잠근다.",
-  "_pipeline": "각 격자셀(cell)에서: 과학레이어→지표 Sᵢ(0~4) 채점 → 생명점수=Σwᵢ·Sᵢ → 0~100. 안전레이어→게이트(통과/잠금). 화면추천 = 게이트 × 생명점수.",
-  "_grid": "전처리로 Jezero DEM·CRISM·지질을 공통 격자(예 100m)로 리샘플 → data/grid.geojson. 셀마다 slope, Sᵢ, rad 속성.",
-
+  "_what": "지도 레이어는 두 그룹임. 과학 레이어는 생명점수로 합쳐지고, 안전 레이어는 게이트로 추천을 잠금.",
+  "_pipeline": "각 격자 칸에서: 과학 레이어 → 지표 Sᵢ(0~4) 채점 → 생명점수 = Σ(wᵢ·Sᵢ, 투입된 i) / Σ(wᵢ, 투입된 i) / 4 × 100 (0~100). 안전 레이어 → 게이트(통과/잠금). 화면 추천 = 게이트 × 생명점수.",
+  "_grid": "전처리(scripts/build_grid.py)로 Jezero CTX DEM 20m, CRISM 광물맵, SIM3464 지질, THEMIS 열관성을 공통 격자로 리샘플함. 칸 약 160m(DEM 8픽셀), 기지 5km 클립, 3,067칸. 산출물은 저장소 루트의 grid.geojson 과 같은 내용의 grid.js. 칸 속성은 slope_deg, comm, S1~S5, score, rock.",
   "science_layers": {
     "_role": "생명점수 입력. 각 레이어가 지표 Sᵢ를 0~4로 채점.",
     "items": [
-      {"feeds": "S1", "name": "함수/점토광물", "product": "CRISM 함수광물 지도", "source": "trek.nasa.gov (MRO/CRISM)",
-       "rubric": "0 없음·1 약함·2 함수광물 암시·3 점토 뚜렷·4 점토+로버확인"},
-      {"feeds": "S2", "name": "퇴적·델타 지질", "product": "Jezero 지질단위 SIM3464 + DEM", "source": "pubs.usgs.gov/publication/sim3464",
-       "rubric": "0 화성암·2 일반퇴적·3 삼각주전면·4 세립 호성이암"},
-      {"feeds": "S4", "name": "물 활동 흔적", "product": "CRISM 수화신호 + 수로/델타 지형", "source": "trek.nasa.gov",
-       "rubric": "0 없음·2 수화 약함·3 수로/델타 지형·4 수화광물+수로 동반"},
-      {"feeds": "S3", "name": "보존성 염류", "product": "THEMIS 야간IR + CRISM 황산/염화물", "source": "trek.nasa.gov",
-       "rubric": "0 없음·2 열관성 이상·3 증발광물 분광·4 황산/탄산염 뚜렷"},
-      {"feeds": "S5", "name": "로버 현장 근접", "product": "Perseverance/MSL 확인 노두 위치", "source": "mars.nasa.gov raw · PDS",
-       "rubric": "0 멀다·2 로버 경로 인근·4 현장 확인지점 반경내 (높은 신뢰도, 좁은 커버)"}
+      {
+        "feeds": "S1",
+        "name": "함수/점토광물",
+        "product": "CRISM 광물 분류맵 (Jezero crater mineral map)",
+        "source": "Zenodo 5575824 (Parente, Itoh, Saranathan), CC-BY-4.0",
+        "rubric": "4 탄산염·점토(스멕타이트·카올리나이트)·함수실리카 / 3 올리빈+점토 혼합 / 1 올리빈·휘석 / null 미식별(검정)·배경(흰색). 범례 최근접 색 분류, 칸 범위 최빈 광물",
+        "status": "실데이터 투입. 2,488 / 3,067칸"
+      },
+      {
+        "feeds": "S2",
+        "name": "퇴적·델타 지질",
+        "product": "Jezero 지질 유닛 SIM3464 를 S2 0~4 로 재코딩한 래스터 (data/s2_jezero.tif)",
+        "source": "pubs.usgs.gov/publication/sim3464 (Sun & Stack 2020)",
+        "rubric": "4 Jezero fan 1·2, Nili Planum fan(삼각주 퇴적) / 3 Smooth unit(평활 퇴적평원) / 1 Jezero floor(화성암으로 확인)·etched·Nili Planum·풍성 사구 / 0 Rugged bright·Crater rim·ejecta·interior. 칸 범위 평균",
+        "status": "실데이터 투입. 3,067 / 3,067칸"
+      },
+      {
+        "feeds": "S4",
+        "name": "물 활동 흔적",
+        "product": "CRISM 수화신호 + 수로/델타 지형",
+        "source": "trek.nasa.gov",
+        "rubric": "0 없음·2 수화 약함·3 수로/델타 지형·4 수화광물+수로 동반",
+        "status": "설계 완료, 미적용. S1·S2 가 모두 물로 형성·퇴적된 지표라 따로 넣지 않음. 격자 값은 전부 null"
+      },
+      {
+        "feeds": "S3",
+        "name": "보존성 염류",
+        "product": "THEMIS 야간IR + CRISM 황산/염화물",
+        "source": "trek.nasa.gov",
+        "rubric": "0 없음·2 열관성 이상·3 증발광물 분광·4 황산/탄산염 뚜렷",
+        "status": "설계 완료, 미적용. Jezero 에 염류가 드묾. 격자 값은 전부 null"
+      },
+      {
+        "feeds": "S5",
+        "name": "로버 현장 근접",
+        "product": "Perseverance/MSL 확인 노두 위치",
+        "source": "mars.nasa.gov raw · PDS",
+        "rubric": "0 멀다·2 로버 경로 인근·4 현장 확인지점 반경내 (높은 신뢰도, 좁은 커버)",
+        "status": "미투입. 격자 값은 전부 null"
+      }
     ]
   },
-
   "safety_layers": {
-    "_role": "점수에 더하지 않음. 추천을 '잠그는' 하드 게이트 + 체력 소모 가중.",
+    "_role": "점수에 더하지 않음. 추천을 잠그는 하드 게이트와 체력 소모 가중으로 씀.",
     "items": [
-      {"key": "walkback", "name": "복귀선(walk-back)", "product": "남은 소모품으로 복귀가능 반경", "source": "모델 §4 (NASA PersEIDS식 소모품 투영)",
-       "gate": "HARD: 반경 밖 셀 = 잠금(추천 불가). 소모품 줄면 반경 수축."},
-      {"key": "slope", "name": "지형 경사", "product": "DEM slope (gdaldem)", "source": "trek.nasa.gov MOLA+HRSC",
-       "gate": "HARD: >25° 통행불가 잠금. SOFT: 경사·흙질로 대사율↑(Pandolf η=2.0)→체력 소모 가중."},
-      {"key": "rock", "name": "암석 피복(바위밭)", "product": "THEMIS 열관성→rock 0~1 (낮은TI=모래, 높은TI=바위). Edwards&Buz 2021", "source": "Zenodo 4931348",
-       "gate": "SOFT: A* 간선비용 ×(1+2·rock)로 바위밭 우회. 하드 차단(통행불가)은 경사가 담당. 점수엔 미합산."},
-      {"key": "rad", "name": "피폭 예산", "product": "RAD 기준 0.64 mSv/day × 지형차폐", "source": "Curiosity RAD (Hassler 2014 / Guo 2026)",
-       "gate": "SOFT→HARD: 누적선량이 EVA 예산 접근시 경고, 초과 예상 경로 잠금."},
-      {"key": "comm", "name": "교신 음영(지형 기반)", "product": "DEM 가시선(viewshed): 기지→셀 직선이 지형에 가리면 끊김",
-       "source": "고도=Mars Trek DEM(실데이터) · 판정=가시선 계산. 전파세기·중계위성은 미반영(참고용).",
-       "base": "기지 기준점 = Perseverance 착륙지(Octavia E. Butler Landing, 18.44N 77.45E)",
-       "status": "DEM 격자(grid.geojson) 전처리 필요. 격자 없으면 가짜 색칠 금지 — 미구현 표시.",
-       "gate": "SOFT·참고용: 🔴끊김/🟡약화/🟢양호. '측정 전파' 아님 명시."}
+      {
+        "key": "walkback",
+        "name": "복귀선(walk-back)",
+        "product": "남은 소모품으로 복귀가능 반경",
+        "source": "docs/1_model_spec_handoff.md §3 (NASA PersEIDS식 소모품 투영)",
+        "gate": "HARD: 반경 밖 칸 = 잠금(추천 불가). 소모품이 줄면 반경 수축.",
+        "status": "데모는 산소 기준 반경만 구현"
+      },
+      {
+        "key": "slope",
+        "name": "지형 경사",
+        "product": "DEM 경사 slope_deg (build_grid.py 가 DEM 기울기로 계산)",
+        "source": "Jezero CTX DEM 20m (USGS Astrogeology)",
+        "gate": "HARD: 25° 초과 통행불가 잠금. SOFT: 경사·토질로 대사율 증가(Pandolf η=2.0) → 체력 소모 가중.",
+        "status": "격자 전 칸 채움. 0.5~22.7°, 25° 초과 칸 없음"
+      },
+      {
+        "key": "rock",
+        "name": "암석 피복(바위밭)",
+        "product": "THEMIS 열관성→rock 0~1 (낮은TI=모래, 높은TI=바위). Edwards&Buz 2021",
+        "source": "Zenodo 4931348",
+        "gate": "SOFT: A* 간선비용 ×(1+2·rock)로 바위밭 우회. 하드 차단(통행불가)은 경사가 담당. 점수엔 미합산.",
+        "status": "격자 전 칸 채움. 0.0~0.32"
+      },
+      {
+        "key": "rad",
+        "name": "피폭 예산",
+        "product": "RAD 기준 0.64 mSv/day × 지형차폐",
+        "source": "Curiosity RAD (Hassler 2014 / Guo 2026)",
+        "gate": "SOFT→HARD: 누적선량이 EVA 예산 접근시 경고, 초과 예상 경로 잠금.",
+        "status": "격자 속성 아님. 데모가 실행 중 누적 선량과 SPE 경보를 계산해 표시함. 예산 초과 경로 잠금은 설계 단계"
+      },
+      {
+        "key": "comm",
+        "name": "교신 음영(지형 기반)",
+        "product": "DEM 시선 판정: 기지→칸 직선이 지형에 가리면 shadow",
+        "source": "고도 = Jezero CTX DEM 20m(실데이터), 판정 = 시선 계산(안테나 높이 15m 가정). 전파 세기·중계 위성은 미반영(참고용).",
+        "base": "기지 기준점 = Perseverance 착륙지(Octavia E. Butler Landing, 18.44N 77.45E)",
+        "status": "격자 전 칸 채움. clear 2,483칸, shadow 584칸",
+        "gate": "SOFT·참고용: comm 값은 clear(양호)와 shadow(음영) 2단계. 측정한 전파가 아님을 표기."
+      }
     ]
   },
-
-  "_combine": "recommend(cell) = gate_hard(cell) ? 0(잠금) : science_score(cell) × soft_penalty(cell). 잠긴 셀은 '과학점수 높아도' 회색+사유표시, go버튼 비활성.",
-  "_authority": "앱은 보조(advisory)만. 최종 go/no-go = 우주인. 안전 게이트는 끌 수 없음(우주인도 잠금해제는 명시적 수동확인 필요)."
+  "_combine": "recommend(cell) = gate_hard(cell) ? 0(잠금) : science_score(cell) × soft_penalty(cell). 잠긴 칸은 과학점수가 높아도 회색+사유 표시, go 버튼 비활성.",
+  "_authority": "앱은 보조(advisory)만 함. 최종 go/no-go 는 우주인이 판단함. 안전 게이트는 끌 수 없음(잠금 해제는 우주인의 명시적 수동 확인이 필요)."
 }

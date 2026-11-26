@@ -1,9 +1,9 @@
-"""MARSWALK 외부 데이터 확인 — 하나씩 실제 호출해서 되는지 점검.
-실행:  python check_apis.py     (requests 필요: pip install requests)
+"""MARSWALK 외부 데이터 확인: 하나씩 실제 호출해서 되는지 점검.
+실행:  python scripts/check_apis.py     (requests 필요: pip install requests, 네트워크 필요)
 """
 import requests
 
-NASA_KEY = "DEMO_KEY"   # ← api.nasa.gov에서 무료키 받으면 여기 교체
+NASA_KEY = "DEMO_KEY"   # 공개 데모 키. api.nasa.gov 에서 무료 키를 받으면 여기 교체
 
 def check_donki():
     url = (f"https://api.nasa.gov/DONKI/notifications"

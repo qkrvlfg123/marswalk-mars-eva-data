@@ -4,10 +4,12 @@
 
 S2 = 세립 퇴적/델타·호성 유닛일수록 높게(0~4). 근거: Broz et al. (2020),
 'Experimental investigation of clay-rich, fine-grained lacustrine/deltaic sediments
-의 유기물 보존능' — 미세립 점토질 호성/삼각주 퇴적물이 유기물 보존에 가장 유리.
+의 유기물 보존능': 미세립 점토질 호성/삼각주 퇴적물이 유기물 보존에 가장 유리.
 델타 팬(삼각주 퇴적) > 평활 퇴적평원 > 호저(저지 평탄) > 기반암/풍성사 > 충돌/노출암.
 
 출력: data/s2_jezero.tif (float32, nodata=-1), CRS=MTM_clon77.5E(지질맵 원본).
+
+실행(저장소 루트에서, 입력·출력 경로가 실행 위치 기준): python scripts/make_s2.py
 """
 import sys, numpy as np, rasterio
 from rasterio.transform import from_origin
@@ -22,11 +24,11 @@ RES = 50.0   # m/px
 
 # 지질유닛(name) → S2(0~4)  [SIM3464, Sun & Stack 2020 유닛명]
 NAME2S2 = {
-    "Jezero fan 1 unit":     4,  # 서부 삼각주 퇴적(세립 델타) — 최상위 보존 타깃
+    "Jezero fan 1 unit":     4,  # 서부 삼각주 퇴적(세립 델타), 최상위 보존 타깃
     "Jezero fan 2 unit":     4,
     "Nili Planum fan unit":  4,
     "Smooth unit, undivided":3,  # 평활 퇴적평원(세립 가능)
-    "Jezero floor unit":     1,  # 호저 저지 평탄부 — Perseverance 착륙 후 화성암(Máaz/Séítah)으로 확인(퇴적 아님) → 하향
+    "Jezero floor unit":     1,  # 호저 저지 평탄부. Perseverance 착륙 후 화성암(Máaz/Séítah)으로 확인(퇴적 아님) → 하향
     "Upper etched unit":     1,  # Nili Planum 탄산염·올리빈 노출 기반암(비호성)
     "Lower etched unit":     1,
     "Nili Planum 1 unit":    1,  # 고지 기반암/평원

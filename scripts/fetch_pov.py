@@ -1,7 +1,8 @@
-"""Perseverance 델타 전선 '풍경' 사진 수집 → pov_candidates.json
+"""Perseverance 델타 전선 풍경 사진 수집 → pov_candidates.json (실행한 디렉터리에 씀)
 - Mastcam-Z / Navcam(풍경) 위주, SuperCam 망원샷 제외
 - 델타 전선 시절 sol 범위로 필터 (조정 가능)
-실행:  python fetch_pov.py
+실행:  python scripts/fetch_pov.py   (requests, 네트워크 필요)
+저장소에는 같은 형식의 목록이 data/pov_candidates.json 으로 들어 있음.
 """
 import requests, json
 

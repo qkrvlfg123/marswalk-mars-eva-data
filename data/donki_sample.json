@@ -4,7 +4,7 @@
   "event": {
     "messageType": "FLR",
     "messageIssueTime": "2024-05-10T06:51Z",
-    "note": "2024-05 대형 태양활동기 — 리플레이 데모용. 실 운용은 /DONKI/notifications 라이브 호출"
+    "note": "2024-05 대형 태양활동기. 리플레이 데모용. 실 운용은 /DONKI/notifications 라이브 호출"
   },
   "spe": {
     "active": true,

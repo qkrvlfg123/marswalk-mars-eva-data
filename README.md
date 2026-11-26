@@ -242,8 +242,7 @@ O2_rate / VO2abs      →  운동강도 %VO₂               [VO2peak 37.5 ml/kg
 - `data/spots.json` 의 score(92, 85, 78, 54)는 폴백용 추정치임. 실제 표시 점수는 격자에서 읽음. 데모는 `spots.json` 을 불러오지 않고 같은 내용을 인라인으로 가지고 있음.
 - 교신 음영은 DEM 시선 근사임. 전파 회절과 중계 위성은 반영하지 않음. DONKI 이벤트 시각은 지구 기준임.
 - 경사 차단 25°, 안테나 높이 15m, 예비분 15%, 체력 임계 0.35, S2 재코딩표, 열관성 구간값은 모두 초기값임.
-- `scripts/gen_biosignature.py` 는 출력 경로가 작성 당시 환경의 절대 경로로 고정돼 있어 그대로는 실행되지 않음. 출력 경로를 `data/weights.json` 으로 고쳐야 함.
-- `data/layers.json` 의 일부 설명(격자 100m 예시, 경사 출처 MOLA+HRSC)은 초기 설계 문구이고 실제 격자는 CTX DEM 20m 기반 160m 칸임.
+- `data/layers.json` 은 레이어와 게이트의 설계 정의 파일임. 데모와 스크립트는 이 파일을 읽지 않음.
 - 데모의 Leaflet 은 CDN 에서 버전 고정 없이 불러옴. 오프라인에서는 지도와 배경 타일이 표시되지 않음.
 
 ## 기술 스택
@@ -349,11 +348,11 @@ python scripts/build_grid.py --dem jezero_dem.tif \
 # 3) 심박식 보정 + 합성 EVA 시계열 (PhysioNet 원본을 ./physionet_data/ 에 받은 뒤)
 python scripts/calibrate_hr.py        # → data/synthetic_eva.json, 계수와 R² 는 콘솔 출력
 
-# 4) 생명점수 가중치 (출력 경로를 data/weights.json 으로 고친 뒤 실행)
+# 4) 생명점수 가중치 (어디서 실행해도 저장소의 data/weights.json 에 씀)
 python scripts/gen_biosignature.py    # → data/weights.json
 ```
 
-출력 `grid.js` 를 `marswalk_grid_demo.html` 옆에 두면 데모가 자동으로 읽음. 이번 정리에서는 원본 데이터가 없어 1~3 단계를 다시 실행하지 못했고, 저장소에 있는 산출물만 대조함.
+출력 `grid.js` 를 `marswalk_grid_demo.html` 옆에 두면 데모가 자동으로 읽음. 이번 정리에서는 원본 데이터가 없어 1~3 단계를 다시 실행하지 못했고, 저장소에 있는 산출물만 대조함. 4 단계는 다시 실행해 기존 `data/weights.json` 과 같은 결과가 나옴을 확인함.
 
 ## 출처
 

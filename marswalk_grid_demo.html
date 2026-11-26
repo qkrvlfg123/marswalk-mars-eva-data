@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <!-- 실제 Jezero 지형 격자. build_grid.py 로 생성:
-     python build_grid.py --dem jezero_dem.tif --out grid.js --clip-km 5 --cell-px 8
+     python scripts/build_grid.py --dem jezero_dem.tif --out grid.js --clip-km 5 --cell-px 8 (전체 옵션은 README)
      이 html 과 같은 폴더에 grid.js 두면 자동 로딩(없어도 데모는 돌아감). -->
 <script src="grid.js" onerror="window.GRID=null;console.error('[MARSWALK] grid.js 로드 실패 — 같은 폴더에 grid.js가 있는지, build_grid.py로 생성됐는지 확인하세요. 경사는 수동 슬라이더로 대체됩니다.')"></script>
 <style>

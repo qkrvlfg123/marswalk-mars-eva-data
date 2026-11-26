@@ -1,5 +1,5 @@
 // MARSWALK 탐사 지점 데이터 (로직과 분리).
-// 지점 추가·수정하려면 여기만 고치면 됨 — html은 안 건드려도 됨.
+// marswalk_grid_demo.html 은 이 파일을 불러오지 않고 같은 지점을 인라인으로 가지고 있음.
 const SPOTS = [
   { name:"델타 전선",    lat:18.472, lon:77.424, score:92, note:"함수광물 노두 · 생명점수 최고",
     img:"https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00400/ids/edr/browse/zcam/ZR0_0400_0702461657_553EBY_N0191126ZCAM07114_0340LUJ01_1200.jpg" },

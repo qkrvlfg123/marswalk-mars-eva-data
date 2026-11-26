@@ -1,6 +1,6 @@
-"""MARSWALK 심박 — 실측 보정 + 합성 EVA 데이터 생성.
-① PhysioNet 트레드밀 실측(속도·심박·VO2)으로 '심박↔%VO2' 곡선을 보정
-② 보정 곡선 + Pandolf(화성 보정)로 EVA 시나리오 합성 데이터 생성
+"""MARSWALK 심박: 실측 보정 + 합성 EVA 데이터 생성.
+1) PhysioNet 트레드밀 실측(속도·심박·VO2)으로 심박과 %VO2 의 관계식을 보정
+2) 보정식 + Pandolf(화성 보정)로 EVA 시나리오 합성 데이터 생성
 
 출력은 `data/synthetic_eva.json` 형식을 그대로 따름:
   {"_source":…, "_model":…, "_sustainable_def":…, "scenario":[{t_min, slope_deg,
@@ -21,7 +21,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_PATH = os.path.join(REPO, "data", "synthetic_eva.json")
 
 def resolve_data_dir():
-    """physionet_data 위치 — 인자 > 현재 디렉터리 > repo 루트 순으로 찾음."""
+    """physionet_data 위치를 인자 > 현재 디렉터리 > repo 루트 순으로 찾음."""
     cands = ([sys.argv[1]] if len(sys.argv) > 1 else []) + [
         "physionet_data", os.path.join(REPO, "physionet_data")]
     for c in cands:
@@ -68,11 +68,11 @@ def calibrate(df):
     print(f"  (기존 데모값: 70 + 116·%VO2 — 실측과 비교해 교체)")
     return float(intercept), float(slope), float(r2), int(len(d))
 
-# ── Pandolf (화성) — %VO2는 화성 중력 반영, 심박곡선은 보편 ──
+# ── Pandolf (화성): %VO2 는 화성 중력 반영, 심박식은 중력과 무관하다고 가정 ──
 M, ETA, GMARS = 80, 2.0, 0.38
 VO2ABS = 37.5*M/1000     # 3.0 L/min (VO2peak 37.5 ml/kg/min · ISS 남성 평균)
 AGE = 34                 # NASA 후보 평균
-HRMAX = 220 - AGE        # 186 bpm — 보정식 외삽을 이 값에서 끊음
+HRMAX = 220 - AGE        # 186 bpm. 보정식 외삽을 이 값에서 끊음
 AEROBIC_CAP = 1.0        # sustainable 플래그 기준 = %VO2 1.0(VO2peak 도달) 초과 여부.
                          # 체력(W') 모델의 지속가능 임계 0.35와는 다른 기준임.
 pandolf = lambda L,v,G: 1.5*M + 2*(M+L)*(L/M)**2 + ETA*(M+L)*(1.5*v*v + 0.35*v*G*GMARS)

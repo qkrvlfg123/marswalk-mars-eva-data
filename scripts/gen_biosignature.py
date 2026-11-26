@@ -2,14 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 생명점수(biosignature) 가중치 생성기.
-핵심: 가중치 '숫자'를 손으로 고르지 않는다.
-  1) 지표 5개의 '순위(rank)'만 과학 프레임워크 근거로 정한다 (iMOST / Hartz&George / Mars2020 SDT).
-  2) 순위 -> 숫자는 공개된 MCDA 공식으로 '계산'한다.
+가중치 숫자는 직접 고르지 않음.
+  1) 지표 5개의 순위(rank)만 과학 프레임워크 근거로 정함 (iMOST / Hartz&George / Mars2020 SDT).
+  2) 순위 -> 숫자는 공개된 MCDA 공식으로 계산함.
      - ROC (Rank Order Centroid, Barron 1992): w_i = (1/N) * sum_{k=i..N} (1/k)
      - RS  (Rank Sum, Stillwell 1981):        w_i = (N+1-i) / sum_{j=1..N}(N+1-j)
 출처: Barron & Barrett (1996) Management Science 42(11):1515-1523.
+
+실행: python scripts/gen_biosignature.py   (어디서 실행해도 <repo>/data/weights.json 에 씀)
 """
-import json
+import json, os
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT_PATH = os.path.join(REPO, "data", "weights.json")
 
 def roc_weights(n):
     w = []
@@ -90,7 +95,7 @@ out = {
     }
 }
 
-with open("/home/claude/marswalk/data/weights.json", "w", encoding="utf-8") as f:
+with open(OUT_PATH, "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, indent=2)
 
 print("ROC:", [r3(x) for x in roc], "sum", round(sum(roc), 4))

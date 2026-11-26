@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MARSWALK 격자 전처리 — DEM(GeoTIFF) → grid.geojson
-"그림(래스터)"을 "칸별 숫자표"로. 앱은 이 geojson을 읽어 칸을 색칠.
+MARSWALK 격자 전처리: DEM(GeoTIFF) → grid.geojson
+래스터를 칸별 속성표로 바꿈. 앱은 이 geojson 을 읽어 칸을 색칠함.
 
 칸마다:
-  slope_deg : 경사(도)           — DEM 실데이터
-  comm      : clear/shadow       — 기지 가시선(지형 기반 추정)
-  S1..S5    : 생명점수 지표 0~4   — CRISM/지질 래스터 준 것만, 없으면 null(가짜 안채움)
-  score     : 0~100 (ROC 가중합)  — Sᵢ 다 있을 때만
+  slope_deg : 경사(도)            DEM 실데이터
+  comm      : clear/shadow        기지 가시선(지형 기반 추정)
+  S1..S5    : 생명점수 지표 0~4    CRISM/지질 래스터 준 것만, 없으면 null(값을 채우지 않음)
+  score     : 0~100 (ROC 가중)     투입된 지표만 재정규화, 지표가 하나도 없으면 null
+  rock      : 암석 피복 0~1        --rock 으로 준 THEMIS 열관성, 없으면 null
 
 좌표계: 위경도 DEM / 미터 투영 DEM 둘 다 처리(출력은 lon/lat, Leaflet 호환).
 
-실행:
+실행(저장소 루트에서):
   pip install rasterio numpy
-  python build_grid.py --dem jezero_dem.tif --out grid.geojson --cell-px 25
-  # 느리면 --cell-px 를 더 키우세요(칸 커지고 빨라짐). 처음엔 25 권장.
+  python scripts/build_grid.py --dem jezero_dem.tif --out grid.geojson --cell-px 25
+  # --cell-px 를 키우면 칸이 커지고 빨라짐. 기본값 25.
+  # 저장소의 격자(칸 약 160m, 3,067칸)를 만든 명령:
+  python scripts/build_grid.py --dem jezero_dem.tif --crism zenodo_5575824/jezeroFinal.tif \
+    --geo data/s2_jezero.tif --geo-scored --rock zenodo_4931348/Jezero_Thermal_Inertia_v1.tiff \
+    --out grid.js --clip-km 5 --cell-px 8 --antenna-h 15
 """
 import argparse, json, math, sys
 
@@ -90,7 +95,7 @@ def rock_from_ti(ti):
         return round(0.5 + (ti - ROCK_TI_MID) / (ROCK_TI_HARD - ROCK_TI_MID) * 0.5, 2)
     return 1.0
 
-# ROC(Rank-Order Centroid) 기본 가중치 — weights.json 없을 때 내장 사용
+# ROC(Rank-Order Centroid) 기본 가중치. weights.json 을 읽지 못할 때 내장값 사용
 ROC_DEFAULT = {"S1": 0.457, "S2": 0.257, "S4": 0.157, "S3": 0.09, "S5": 0.04}
 
 def load_weights(path):
@@ -327,14 +332,14 @@ def main():
                   else sample_S("S2", cx, cy))
             S = {"S1": s1, "S2": s2, "S3": None, "S4": None, "S5": None}
             # score = 가용 지표만 재정규화: Σ(wᵢ·Sᵢ, 있는 i) / Σ(wᵢ, 있는 i) / 4 * 100
-            # (지표가 하나도 없으면 null — 가짜 안 채움)
+            # (지표가 하나도 없으면 null. 값을 채우지 않음)
             score = None
             if W5:
                 have = [k for k in S if S[k] is not None]
                 wsum = sum(W5.get(k, 0.0) for k in have)
                 if have and wsum > 0:
                     score = round(sum(W5.get(k, 0.0) * S[k] for k in have) / wsum / 4 * 100, 1)
-            rock = sample_rock(*bb)   # 암석 피복(0~1) — 안전레이어(점수 아님)
+            rock = sample_rock(*bb)   # 암석 피복(0~1), 안전레이어(점수 아님)
             feats.append({
                 "type": "Feature",
                 "properties": {"slope_deg": slp, "comm": comm, **S, "score": score, "rock": rock},
